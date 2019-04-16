@@ -1,0 +1,5 @@
+---
+
+- name: "Pulling Docker image: ddclient"
+  docker_image:
+    name: linuxserver/ddclient:arm64v8-latest

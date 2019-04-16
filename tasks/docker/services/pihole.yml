@@ -1,0 +1,5 @@
+---
+
+- name: "Pulling Docker image: pihole"
+  docker_image:
+    name: pihole/pihole:latest

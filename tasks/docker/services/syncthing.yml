@@ -1,0 +1,5 @@
+---
+
+- name: "Pulling Docker image: syncthing"
+  docker_image:
+    name: linuxserver/syncthing:arm64v8-latest

@@ -1,0 +1,9 @@
+---
+
+- include: docker/install.yml
+- include: docker/init.yml
+# - include: docker/services/nginx.yml
+- include: docker/services/ddclient.yml
+- include: docker/services/syncthing.yml
+- include: docker/services/pihole.yml
+- include: docker/services/plex.yml

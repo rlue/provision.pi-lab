@@ -1,0 +1,30 @@
+---
+
+- name: Setting hostname
+  hostname: { name: "{{ hostname }}" }
+  register: set_hostname
+- name: Updating /etc/hosts file with new hostname
+  lineinfile:
+    path: /etc/hosts
+    regexp: "^127.0.1.1\\s+(raspberrypi|{{ hostname }})"
+    line: "127.0.1.1	{{ hostname }}"
+- name: Restarting avahi-daemon to register new hostname
+  service:
+    name: avahi-daemon
+    state: restarted
+  when: set_hostname.changed
+- name: Installing base packages
+  apt:
+    update_cache: yes
+    name: "{{ packages }}"
+  vars:
+    packages:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - git
+      - stow
+      - ufw
+      - fail2ban
+      - vim

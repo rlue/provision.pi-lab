@@ -1,0 +1,33 @@
+---
+
+- name: Enabling ufw
+  ufw:
+    state: enabled
+    policy: deny
+- name: Allowing SSH and select port connections in ufw
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+  with_items:
+    - 22
+    - 2222
+    - 8080
+    - 8088
+- name: Allowing all local subnet connections in ufw
+  ufw:
+    rule: allow
+    from_ip: "{{ local_subnet }}"
+- name: Disabling password login for sshd 
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+- name: Allowing password login on local subnet for sshd 
+  blockinfile:
+    path: /etc/ssh/sshd_config
+    block: |
+      Match User {{ username }}
+      	GatewayPorts yes
+      
+      Match address {{ local_subnet }}
+      	PasswordAuthentication yes

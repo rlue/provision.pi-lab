@@ -1,0 +1,7 @@
+---
+
+- include: config/system.yml
+  become: true
+- include: config/network.yml
+  become: true
+- include: config/home.yml

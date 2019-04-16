@@ -1,0 +1,14 @@
+---
+
+- name: "Adding user {{ username }} to group docker"
+  become: yes
+  user:
+    name: "{{ username }}"
+    groups: docker
+    append: yes
+- name: Resetting ssh connection to apply new group privileges
+  meta: reset_connection
+- name: Logging into Docker Hub
+  docker_login:
+    username: "{{ docker_username }}"
+    password: "{{ docker_password }}"

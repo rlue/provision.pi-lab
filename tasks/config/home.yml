@@ -1,0 +1,19 @@
+---
+
+- name: Cloning user .config repo
+  git:
+    repo: 'https://github.com/rlue/.config.git'
+    dest: "/home/{{ username }}/.config"
+- name: Getting redundant dotfiles
+  shell: "stow --stow --dir=$HOME/.config --verbose --no . 2>&1 | grep 'existing target is neither a link nor a directory:' | awk '{print $NF}'"
+  register: redundant_dotfiles
+  changed_when: False
+- name: Removing redundant dotfiles
+  file:
+    path: "/home/{{ username }}/{{ item }}"
+    state: absent
+  with_items: "{{ redundant_dotfiles.stdout_lines }}"
+- name: Stowing .config files
+  command: "stow --stow --dir=$HOME/.config --verbose ."
+  register: stow
+  changed_when: stow.stderr != ""
