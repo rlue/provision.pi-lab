@@ -4,6 +4,7 @@
   git:
     repo: 'https://github.com/rlue/.config.git'
     dest: "/home/{{ username }}/.config"
+    update: no
 - name: Getting redundant dotfiles
   shell: "stow --stow --dir=$HOME/.config --verbose --no . 2>&1 | grep 'existing target is neither a link nor a directory:' | awk '{print $NF}'"
   register: redundant_dotfiles
@@ -17,3 +18,62 @@
   command: "stow --stow --dir=$HOME/.config --verbose ."
   register: stow
   changed_when: stow.stderr != ""
+- name: Creating src/ directory
+  file:
+    state: directory
+    path: "/home/{{ username }}/src"
+
+# Install Ruby
+- name: Installing ruby dependencies
+  apt:
+    name: "{{ packages }}"
+  become: yes
+  vars:
+    packages:
+      - libssl-dev
+      - libreadline-dev
+      - libxslt1-dev     # system libraries for
+      - libxml2-dev      # nokogiri
+- name: Cloning rbenv repo
+  git:
+    repo: 'https://github.com/rbenv/rbenv.git'
+    dest: "/home/{{ username }}/.rbenv"
+- name: Installing rbenv
+  shell: "src/configure && make -C src"
+  args:
+    chdir: "/home/{{ username }}/.rbenv"
+    creates: "/home/{{ username }}/.rbenv/libexec/rbenv-realpath.dylib"
+- name: Creating rbenv plugins folder
+  file:
+    state: directory
+    path: "/home/{{ username }}/.rbenv/plugins"
+- name: Cloning rbenv-update
+  git:
+    repo: 'https://github.com/rkh/rbenv-update.git'
+    dest: "/home/{{ username }}/.rbenv/plugins/rbenv-update"
+- name: Cloning ruby-build
+  git:
+    repo: 'https://github.com/rbenv/ruby-build.git'
+    dest: "/home/{{ username }}/.rbenv/plugins/ruby-build"
+- name: Determining latest ruby version
+  shell: "/home/{{ username }}/.rbenv/bin/rbenv install --list | grep '^\\s*[[:digit:]]\\.[[:digit:]]\\.[[:digit:]]$' | tail -n1 | awk '{print $NF}'"
+  register: latest_ruby_version
+  changed_when: False
+- name: Installing latest ruby version
+  shell: "/home/{{ username }}/.rbenv/bin/rbenv install -s {{ latest_ruby_version.stdout }}"
+  register: rbenv_install
+  changed_when: rbenv_install.stderr != ""
+- name: Setting global ruby version
+  copy:
+    dest: "/home/{{ username }}/.rbenv/version"
+    mode: 0644
+    content: |
+      {{ latest_ruby_version.stdout }}
+- name: Updating rubygems
+  shell: "/home/{{ username }}/.rbenv/shims/gem update --system --force"
+  register: update_gem
+  changed_when: update_gem.stdout != "Latest version already installed. Done."
+- name: Updating bundler
+  shell: "/home/{{ username }}/.rbenv/shims/gem update bundler --force"
+  register: update_bundler
+  changed_when: update_bundler.stdout != "Updating installed gems\nNothing to update"

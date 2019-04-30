@@ -1,5 +1,76 @@
 ---
 
-- name: "Pulling Docker image: nginx-whatever"
-  docker_image:
-    name: linuxserver/ddclient:arm64v8-latest
+- name: Allowing HTTP/HTTPS connections in ufw
+  become: yes
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+  with_items:
+    - 80
+    - 443
+
+- name: Cloning nginx docker-compose repo
+  git:
+    repo: https://github.com/rlue/pi-lab.nginx.git
+    dest: "/home/{{ username }}/src/pi-lab.nginx"
+
+- name: Cloning ryanlue.com repo
+  git:
+    bare: yes
+    repo: https://github.com/rlue/ryanlue.com.git
+    dest: "/home/{{ username }}/src/ryanlue.com.git"
+- name: Creating post-receive hook
+  copy:
+    dest: "/home/{{ username }}/src/ryanlue.com.git/hooks/post-receive"
+    mode: 0755
+    content: |
+      #!/bin/bash -l
+
+      export PATH="$HOME/.rbenv/shims:$HOME/.rbenv/bin:$PATH"
+      GIT_REPO="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && git rev-parse --git-dir)"
+      TMP_CLONE="$(mktemp -d)"
+      PUBLIC_WWW=$HOME/src/pi-lab.nginx/static/ryanlue.com
+
+      git clone $GIT_REPO $TMP_CLONE
+      cd $TMP_CLONE
+      bundle install
+      bundle exec jekyll build --source $TMP_CLONE --destination $PUBLIC_WWW
+      cd $HOME
+      rm -rf $TMP_CLONE
+- name: Running post-receive hook
+  shell: "/home/{{ username }}/src/ryanlue.com.git/hooks/post-receive"
+  args:
+    chdir: "/home/{{ username }}/src/ryanlue.com.git/hooks"
+    creates: "/home/{{ username }}/src/pi-lab.nginx/static/ryanlue.com"
+
+- name: Cloning jekyll-solana repo
+  git:
+    bare: yes
+    repo: https://github.com/rlue/jekyll-solana.git
+    dest: "/home/{{ username }}/src/jekyll-solana.git"
+- name: Creating post-receive hook
+  copy:
+    dest: "/home/{{ username }}/src/jekyll-solana.git/hooks/post-receive"
+    mode: 0755
+    content: |
+      #!/bin/bash -l
+
+      export PATH="$HOME/.rbenv/shims:$HOME/.rbenv/bin:$PATH"
+      GIT_REPO="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && git rev-parse --git-dir)"
+      TMP_CLONE="$(mktemp -d)"
+      PUBLIC_WWW=$HOME/src/pi-lab.nginx/static/solana.ryanlue.com
+
+      git clone $GIT_REPO $TMP_CLONE
+      cd $TMP_CLONE
+      bundle install
+      bundle exec jekyll build --source $TMP_CLONE --destination $PUBLIC_WWW
+      cd $HOME
+      rm -rf $TMP_CLONE
+- name: Running post-receive hook
+  shell: "/home/{{ username }}/src/jekyll-solana.git/hooks/post-receive"
+  args:
+    chdir: "/home/{{ username }}/src/ryanlue.com.git/hooks"
+    creates: "/home/{{ username }}/src/pi-lab.nginx/static/solana.ryanlue.com"
+- name: Launching nginx static server
+  docker_service:
+    project_src: "/home/{{ username }}/src/pi-lab.nginx"

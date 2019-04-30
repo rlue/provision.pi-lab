@@ -31,3 +31,30 @@
       
       Match address {{ local_subnet }}
       	PasswordAuthentication yes
+
+# The following tasks are necessary for cloning private git repos
+- name: Allowing SSH agent forwarding for sshd
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?AllowAgentForwarding'
+    line: 'AllowAgentForwarding yes'
+  register: ssh_agent_forwarding
+- name: Enablish SSH agent forwarding on localhost
+  delegate_to: localhost
+  become: no
+  blockinfile:
+    path: "$HOME/.ssh/config"
+    block: |
+      Host          {{ inventory_hostname }}
+      ForwardAgent  yes
+- name: Adding GitHub server key to known SSH hosts
+  known_hosts:
+    name: github.com
+    path: /etc/ssh/ssh_known_hosts
+    key: "|1|7dpt06ssisrL05Zl2bVNNINx8vc=|aTJu4GBIM88HyQztnoJF+FDQcxA= ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
+
+- name: Restarting sshd to activate new settings
+  service:
+    name: ssh
+    state: restarted
+  when: ssh_agent_forwarding.changed

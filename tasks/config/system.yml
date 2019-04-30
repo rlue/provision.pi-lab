@@ -13,6 +13,14 @@
     name: avahi-daemon
     state: restarted
   when: set_hostname.changed
+- name: Setting Wi-Fi country
+  copy:
+    dest: /etc/wpa_supplicant/wpa_supplicant.conf
+    mode: 0644
+    content: |
+      ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+      update_config=1
+      country={{ wifi_country_code }}
 - name: Installing base packages
   apt:
     update_cache: yes
