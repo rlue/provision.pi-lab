@@ -24,3 +24,7 @@ ddclient_config: |
   password=<password>
   @,www,pihole
 ddclient_timezone: America/Los_Angeles
+
+# syncthing (generate a BCrypt password hash at https://passwordhashing.com/BCrypt)
+syncthing_username: jdoe
+syncthing_password_hash: $2a$2a$10$w0PqpTIGq2mLSxq3HqLSfuQZFopCZ7yXFpG4KS5QFZuNJdWUmGx3m

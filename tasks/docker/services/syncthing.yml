@@ -1,5 +1,149 @@
 ---
 
-- name: "Pulling Docker image: syncthing"
-  docker_image:
-    name: linuxserver/syncthing:arm64v8-latest
+- name: Installing Ansible XML module dependencies
+  become: yes
+  apt: { name: python-lxml }
+- name: Allowing HTTP/HTTPS connections in ufw
+  become: yes
+  ufw:
+    rule: allow
+    port: 8384
+- name: Creating syncthing config directory
+  file:
+    state: directory
+    path: "/home/{{ username }}/.local/etc/syncthing"
+- name: Getting user uid
+  command: "id -u {{ username }}"
+  register: uid
+  changed_when: no
+- name: Getting user gid
+  command: "id -g {{ username }}"
+  register: gid
+  changed_when: no
+- name: Launching syncthing
+  docker_service:
+    project_name: syncthing
+    definition:
+      version: "2"
+      services:
+        syncthing:
+          image: linuxserver/syncthing
+          container_name: syncthing
+          environment:
+            - "PUID={{ uid.stdout }}"
+            - "PGID={{ gid.stdout }}"
+            - "TZ={{ ddclient_timezone }}"
+            - UMASK_SET=<022>
+          volumes:
+            - "/home/{{ username }}/.local/etc/syncthing:/config"
+            - "/home/{{ username }}/foo:/home/rlue"  # FIXME
+          ports:
+            - 8384:8384
+            - 22000:22000
+            - 21027:21027/udp
+          restart: unless-stopped
+- name: Waiting for syncthing to generate config file
+  wait_for:
+    path: "/home/{{ username }}/.local/etc/syncthing/config.xml"
+  changed_when: False
+- name: syncthing config - Setting device name
+  xml:
+    path: "/home/{{ username }}/.local/etc/syncthing/config.xml"
+    xpath: /configuration/device[1]
+    attribute: name
+    value: "{{ hostname }}"
+  register: config_device
+- name: syncthing config - Removing default sync folder
+  xml:
+    path: "/home/{{ username }}/.local/etc/syncthing/config.xml"
+    xpath: /configuration/folder[@id="default"]
+    state: absent
+  register: config_sync_folder
+- name: syncthing config - Enabling HTTPS in config
+  xml:
+    path: "/home/{{ username }}/.local/etc/syncthing/config.xml"
+    xpath: /configuration/gui
+    attribute: tls
+    value: "true"
+  register: config_tls
+- name: syncthing config - Setting username for GUI authentication in config
+  xml:
+    path: "/home/{{ username }}/.local/etc/syncthing/config.xml"
+    xpath: /configuration/gui/user
+    state: present
+    value: "{{ syncthing_username }}"
+  register: config_username
+- name: syncthing config - Setting password for GUI authentication in config
+  xml:
+    path: "/home/{{ username }}/.local/etc/syncthing/config.xml"
+    xpath: /configuration/gui/password
+    state: present
+    value: "{{ syncthing_password_hash }}"
+  register: config_password
+- name: Removing default sync directory
+  file:
+    path: "/home/{{ username }}/.local/etc/syncthing/Sync"
+    state: absent
+  register: rm_default_folder
+- name: Linking HTTPS certificate from nginx static repo
+  file:
+    src: "/home/{{ username }}/src/pi-lab.nginx/certs/ryanlue.com/cert.pem"
+    dest: "/home/{{ username }}/.local/etc/syncthing/https-cert.pem"
+    state: link
+  register: link_https_cert
+- name: Linking HTTPS key from nginx static repo
+  file:
+    src: "/home/{{ username }}/src/pi-lab.nginx/certs/ryanlue.com/key.pem"
+    dest: "/home/{{ username }}/.local/etc/syncthing/https-key.pem"
+    state: link
+  register: link_https_key
+- name: Restarting syncthing
+  docker_container:
+    name: syncthing
+    state: started
+    restart: yes
+  when: config_device.changed or config_sync_folder.changed or config_tls.changed or config_username.changed or config_password.changed or rm_default_folder.changed or link_https_cert.changed or link_https_key.changed
+
+# TODO determine paths to bind volumes to
+# TODO update config.xml with...
+#   (get folders & devices from localhost?)
+#   * folders & devices
+# <folder id="jwbul-zqfqy" label="Home" path="/home/rlue" type="sendreceive" rescanIntervalS="3600" fsWatcherEnabled="true" fsWatcherDelayS="10" ignorePerms="false" autoNormalize="true">
+#     <filesystemType>basic</filesystemType>
+#     <device id="D3WAARE-3Q6ALOB-JCMZ75U-26ZVNW3-XVSEDBQ-GJMDFFQ-MYX47EL-Y5ACTAK" introducedBy=""></device>
+#     <device id="HWV3NFD-2YKXUCD-Q3ZX46C-WHLC3AT-ZKOLMON-7KRF3OE-E74CGR5-W5Z5MQV" introducedBy=""></device>
+#     <device id="JPD5SLE-QLIPC4E-HVZRZF4-KHPLIPQ-O5ZWXZB-EHRKUUN-TEATZCC-YADUKQQ" introducedBy=""></device>
+#     <minDiskFree unit="%">1</minDiskFree>
+#     <versioning></versioning>
+#     <copiers>0</copiers>
+#     <pullerMaxPendingKiB>0</pullerMaxPendingKiB>
+#     <hashers>0</hashers>
+#     <order>random</order>
+#     <ignoreDelete>false</ignoreDelete>
+#     <scanProgressIntervalS>0</scanProgressIntervalS>
+#     <pullerPauseS>0</pullerPauseS>
+#     <maxConflicts>10</maxConflicts>
+#     <disableSparseFiles>false</disableSparseFiles>
+#     <disableTempIndexes>false</disableTempIndexes>
+#     <paused>false</paused>
+#     <weakHashThresholdPct>25</weakHashThresholdPct>
+#     <markerName>.stfolder</markerName>
+#     <useLargeBlocks>false</useLargeBlocks>
+#     <copyOwnershipFromParent>false</copyOwnershipFromParent>
+# </folder>
+# <device id="D3WAARE-3Q6ALOB-JCMZ75U-26ZVNW3-XVSEDBQ-GJMDFFQ-MYX47EL-Y5ACTAK" name="herringbone" compression="metadata" introducer="false" skipIntroductionRemovals="false" introducedBy="">
+#     <address>dynamic</address>
+#     <paused>false</paused>
+#     <autoAcceptFolders>false</autoAcceptFolders>
+#     <maxSendKbps>0</maxSendKbps>
+#     <maxRecvKbps>0</maxRecvKbps>
+#     <maxRequestKiB>0</maxRequestKiB>
+# </device>
+# <device id="HWV3NFD-2YKXUCD-Q3ZX46C-WHLC3AT-ZKOLMON-7KRF3OE-E74CGR5-W5Z5MQV" name="shibori" compression="metadata" introducer="false" skipIntroductionRemovals="false" introducedBy="">
+#     <address>dynamic</address>
+#     <paused>false</paused>
+#     <autoAcceptFolders>false</autoAcceptFolders>
+#     <maxSendKbps>0</maxSendKbps>
+#     <maxRecvKbps>0</maxRecvKbps>
+#     <maxRequestKiB>0</maxRequestKiB>
+# </device>
