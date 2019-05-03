@@ -14,3 +14,13 @@ ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDbIgTx9SKQTMLYyLJB0vgGYo/ZaSnlRw289Vw9I9UG
 # docker
 docker_username: jdoe
 docker_password: password
+
+# ddclient
+ddclient_config: |
+  use=web, web=<web>
+  protocol=<protocol>
+  server=<server>
+  login=<login>
+  password=<password>
+  @,www,pihole
+ddclient_timezone: America/Los_Angeles

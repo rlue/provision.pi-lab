@@ -1,5 +1,35 @@
 ---
 
-- name: "Pulling Docker image: ddclient"
-  docker_image:
-    name: linuxserver/ddclient:arm64v8-latest
+- name: Creating ddclient config directory
+  file:
+    state: directory
+    path: "/home/{{ username }}/.local/etc/ddclient"
+- name: Copying ddclient.conf
+  copy:
+    dest: "/home/{{ username }}/.local/etc/ddclient/ddclient.conf"
+    mode: 0644
+    content: "{{ ddclient_config }}"
+- name: Getting user uid
+  command: "id -u {{ username }}"
+  register: uid
+  changed_when: False
+- name: Getting user gid
+  command: "id -g {{ username }}"
+  register: gid
+  changed_when: False
+- name: Launching ddclient
+  docker_service:
+    project_name: ddclient
+    definition:
+      version: "2"
+      services:
+        ddclient:
+          image: linuxserver/ddclient
+          container_name: ddclient
+          environment:
+            - "PUID={{ uid.stdout }}"
+            - "PGID={{ gid.stdout }}"
+            - "TZ={{ ddclient_timezone }}"
+          volumes:
+            - "/home/{{ username }}/.local/etc/ddclient:/config"
+          restart: unless-stopped
