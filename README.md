@@ -3,18 +3,17 @@ pi-lab.provision
 
 Ansible playbook for provisioning a Raspberry Pi as a home server, running:
 
-* multiple nginx static web servers, supported by:
-  * nginx reverse proxy
-  * letsencrypt certificate automation
-  * ddclient (dynamic DNS renewal)
+* nginx reverse proxy + automated letsencrypt certificate renewal
+* multiple nginx static web servers (blog, Jekyll theme demo site, etc.)
+* ddclient (automated dynamic DNS renewal)
 * syncthing (file synchronization)
+* Pi-hole (DNS-level adblocking)
 * restic (scheduled backups)
 * Plex Media Server
-* Pi-hole
 
 ### TODO
 
-* TIG stack (Telegraf, InfluxDB, Grafana)
+* TIG stack (Telegraf, InfluxDB, Grafana)?
 
 Preparation
 -----------

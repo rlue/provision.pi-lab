@@ -1,5 +1,30 @@
 ---
 
+- name: Setting hostname
+  hostname: { name: "{{ hostname }}" }
+  register: set_hostname
+- name: Updating /etc/hosts file with new hostname
+  lineinfile:
+    path: /etc/hosts
+    regexp: "^127.0.1.1\\s+(raspberrypi|{{ hostname }})"
+    line: "127.0.1.1	{{ hostname }}"
+- name: Restarting avahi-daemon to register new hostname
+  service:
+    name: avahi-daemon
+    state: restarted
+  when: set_hostname.changed
+- name: Setting Wi-Fi country
+  copy:
+    dest: /etc/wpa_supplicant/wpa_supplicant.conf
+    mode: 0644
+    content: |
+      ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+      update_config=1
+      country={{ wifi_country_code }}
+  register: set_wifi_country
+- name: Reconfigure Wi-Fi network interface to register new country
+  command: wpa_cli -i wlan0 reconfigure
+  when: set_wifi_country.changed
 - name: Enabling ufw
   ufw:
     state: enabled

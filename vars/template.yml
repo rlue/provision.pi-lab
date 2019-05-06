@@ -14,6 +14,7 @@ ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDbIgTx9SKQTMLYyLJB0vgGYo/ZaSnlRw289Vw9I9UG
 # docker
 docker_username: jdoe
 docker_password: password
+timezone: America/Los_Angeles  # needed for ddclient and pihole containers
 
 # ddclient
 ddclient_config: |
@@ -23,8 +24,11 @@ ddclient_config: |
   login=<login>
   password=<password>
   @,www,pihole
-ddclient_timezone: America/Los_Angeles
 
 # syncthing (generate a BCrypt password hash at https://passwordhashing.com/BCrypt)
 syncthing_username: jdoe
 syncthing_password_hash: $2a$2a$10$w0PqpTIGq2mLSxq3HqLSfuQZFopCZ7yXFpG4KS5QFZuNJdWUmGx3m
+
+# pihole
+# NOTE: This password is exposed as an environment variable on the container
+pihole_password: password

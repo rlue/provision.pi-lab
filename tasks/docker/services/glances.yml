@@ -1,0 +1,29 @@
+---
+
+- name: Launching glances
+  docker_service:
+    project_name: glances
+    definition:
+      version: "2"
+      services:
+        ddclient:
+          image: nicolargo/glances
+          container_name: glances
+          pid: host
+          networks:
+            - nginxproxy_default
+          ports:
+            - 61209:61209
+          environment:
+            GLANCES_OPT: -w
+            VIRTUAL_HOST: glances.ryanlue.com
+            VIRTUAL_PORT: 61208
+            LETSENCRYPT_HOST: glances.ryanlue.com
+            LETSENCRYPT_EMAIL: hello@ryanlue.com
+          volumes:
+            - "/home/{{ username }}/.local/etc/glances:/glances/conf"
+            - /var/run/docker.sock:/tmp/docker.sock:ro
+          restart: unless-stopped
+      networks:
+        nginxproxy_default:
+          external: true

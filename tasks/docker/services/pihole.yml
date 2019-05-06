@@ -1,5 +1,37 @@
 ---
 
-- name: "Pulling Docker image: pihole"
-  docker_image:
-    name: pihole/pihole:latest
+# WIP: https://github.com/pi-hole/docker-pi-hole#tips-and-tricks
+- name: Launching pihole
+  docker_service:
+    project_name: pihole
+    definition:
+      version: "2"
+      services:
+        pihole:
+          image: pihole/pihole:latest
+          container_name: pihole
+          networks:
+            - nginxproxy_default
+          ports:
+            - 53:53/tcp
+            - 53:53/udp
+          environment:
+            ServerIP: "{{ ansible_host }}"
+            TZ: "{{ timezone }}"
+            WEBPASSWORD: "{{ pihole_password }}"
+            DNS1: 1.1.1.1
+            DNS2: 1.0.0.1
+            VIRTUAL_HOST: pihole.ryanlue.com
+            HTTPS_METHOD: noredirect
+            LETSENCRYPT_HOST: pihole.ryanlue.com
+            LETSENCRYPT_EMAIL: hello@ryanlue.com
+          volumes:
+            - "/home/{{ username }}/.local/etc/pihole:/etc/pihole"
+            - "/home/{{ username }}/.local/etc/dnsmasq.d:/etc/dnsmasq.d"
+          dns:
+            - 127.0.0.1
+            - 1.1.1.1
+          restart: unless-stopped
+      networks:
+        nginxproxy_default:
+          external: true

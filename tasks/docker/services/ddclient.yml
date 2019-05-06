@@ -27,9 +27,9 @@
           image: linuxserver/ddclient
           container_name: ddclient
           environment:
-            - "PUID={{ uid.stdout }}"
-            - "PGID={{ gid.stdout }}"
-            - "TZ={{ ddclient_timezone }}"
+            PUID: "{{ uid.stdout }}"
+            PGID: "{{ gid.stdout }}"
+            TZ: "{{ timezone }}"
           volumes:
             - "/home/{{ username }}/.local/etc/ddclient:/config"
           restart: unless-stopped

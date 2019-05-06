@@ -3,15 +3,6 @@
 - name: Installing Ansible XML module dependencies
   become: yes
   apt: { name: python-lxml }
-- name: Allowing HTTP/HTTPS connections in ufw
-  become: yes
-  ufw:
-    rule: allow
-    port: 8384
-- name: Creating syncthing config directory
-  file:
-    state: directory
-    path: "/home/{{ username }}/.local/etc/syncthing"
 - name: Getting user uid
   command: "id -u {{ username }}"
   register: uid
@@ -29,19 +20,28 @@
         syncthing:
           image: linuxserver/syncthing
           container_name: syncthing
+          networks:
+            - nginxproxy_default
           environment:
-            - "PUID={{ uid.stdout }}"
-            - "PGID={{ gid.stdout }}"
-            - "TZ={{ ddclient_timezone }}"
-            - UMASK_SET=<022>
+            PUID: "{{ uid.stdout }}"
+            PGID: "{{ gid.stdout }}"
+            TZ: "{{ timezone }}"
+            UMASK_SET: <022>
+            VIRTUAL_HOST: syncthing.ryanlue.com
+            VIRTUAL_PORT: 8384
+            LETSENCRYPT_HOST: syncthing.ryanlue.com
+            LETSENCRYPT_EMAIL: hello@ryanlue.com
           volumes:
             - "/home/{{ username }}/.local/etc/syncthing:/config"
-            - "/home/{{ username }}/foo:/home/rlue"  # FIXME
+            # - "/home/{{ username }}/foo:/home/rlue"  # FIXME
           ports:
             - 8384:8384
             - 22000:22000
             - 21027:21027/udp
           restart: unless-stopped
+      networks:
+        nginxproxy_default:
+          external: true
 - name: Waiting for syncthing to generate config file
   wait_for:
     path: "/home/{{ username }}/.local/etc/syncthing/config.xml"
@@ -59,13 +59,6 @@
     xpath: /configuration/folder[@id="default"]
     state: absent
   register: config_sync_folder
-- name: syncthing config - Enabling HTTPS in config
-  xml:
-    path: "/home/{{ username }}/.local/etc/syncthing/config.xml"
-    xpath: /configuration/gui
-    attribute: tls
-    value: "true"
-  register: config_tls
 - name: syncthing config - Setting username for GUI authentication in config
   xml:
     path: "/home/{{ username }}/.local/etc/syncthing/config.xml"
@@ -85,24 +78,12 @@
     path: "/home/{{ username }}/.local/etc/syncthing/Sync"
     state: absent
   register: rm_default_folder
-- name: Linking HTTPS certificate from nginx static repo
-  file:
-    src: "/home/{{ username }}/src/pi-lab.nginx/certs/ryanlue.com/cert.pem"
-    dest: "/home/{{ username }}/.local/etc/syncthing/https-cert.pem"
-    state: link
-  register: link_https_cert
-- name: Linking HTTPS key from nginx static repo
-  file:
-    src: "/home/{{ username }}/src/pi-lab.nginx/certs/ryanlue.com/key.pem"
-    dest: "/home/{{ username }}/.local/etc/syncthing/https-key.pem"
-    state: link
-  register: link_https_key
 - name: Restarting syncthing
   docker_container:
     name: syncthing
     state: started
     restart: yes
-  when: config_device.changed or config_sync_folder.changed or config_tls.changed or config_username.changed or config_password.changed or rm_default_folder.changed or link_https_cert.changed or link_https_key.changed
+  when: config_device.changed or config_sync_folder.changed or config_username.changed or config_password.changed or rm_default_folder.changed
 
 # TODO determine paths to bind volumes to
 # TODO update config.xml with...

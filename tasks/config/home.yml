@@ -69,6 +69,12 @@
     mode: 0644
     content: |
       {{ latest_ruby_version.stdout }}
+- name: Setting local ruby version
+  copy:
+    dest: "/home/{{ username }}/.config/.ruby-version"
+    mode: 0644
+    content: |
+      {{ latest_ruby_version.stdout }}
 - name: Updating rubygems
   shell: "/home/{{ username }}/.rbenv/shims/gem update --system --force"
   register: update_gem

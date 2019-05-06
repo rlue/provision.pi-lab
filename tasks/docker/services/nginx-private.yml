@@ -1,0 +1,55 @@
+---
+
+- name: Creating private.ryanlue.com nginx config directory
+  file:
+    state: directory
+    path: "/home/{{ username }}/.local/etc/nginx/private.conf.d"
+- name: Creating private.ryanlue.com nginx config
+  copy:
+    dest: "/home/{{ username }}/.local/etc/nginx/private.conf.d/default.conf"
+    mode: 0644
+    content: |
+      server {
+          listen       80;
+          server_name  localhost;
+
+          location / {
+              root   /usr/share/nginx/html;
+              index  index.html index.htm;
+
+              autoindex on;
+              autoindex_exact_size off;
+          }
+
+          error_page   500 502 503 504  /50x.html;
+          location = /50x.html {
+              root   /usr/share/nginx/html;
+          }
+      }
+- name: Cloning private.ryanlue.com repo
+  git:
+    repo: git@github.com:rlue/private.ryanlue.com.git
+    dest: "/home/{{ username }}/www/private.ryanlue.com"
+
+- name: Launching nginx-private
+  docker_service:
+    project_name: nginx-private
+    definition:
+      version: "2"
+      services:
+        nginx-private:
+          restart: always
+          image: arm32v6/nginx:alpine
+          container_name: nginx-private
+          networks:
+            - nginxproxy_default
+          volumes:
+            - "/home/{{ username }}/www/private.ryanlue.com:/usr/share/nginx/html:ro"
+            - "/home/{{ username }}/.local/etc/nginx/private.conf.d:/etc/nginx/conf.d"
+          environment:
+            VIRTUAL_HOST: private.ryanlue.com
+            LETSENCRYPT_HOST: private.ryanlue.com
+            LETSENCRYPT_EMAIL: hello@ryanlue.com
+      networks:
+        nginxproxy_default:
+          external: true

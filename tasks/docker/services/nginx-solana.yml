@@ -1,0 +1,77 @@
+---
+
+- name: Creating solana.ryanlue.com nginx config directory
+  file:
+    state: directory
+    path: "/home/{{ username }}/.local/etc/nginx/solana.conf.d"
+- name: Creating solana.ryanlue.com nginx config
+  copy:
+    dest: "/home/{{ username }}/.local/etc/nginx/solana.conf.d/default.conf"
+    mode: 0644
+    content: |
+      server {
+          listen       80;
+          server_name  localhost;
+
+          location / {
+              root   /usr/share/nginx/html;
+              index  index.html index.htm;
+
+              # per https://sixtwothree.org/posts/nginx-configuration-removing-html-file-extensions-and-trailing-slashes
+              rewrite ^(/.*)\.html(\?.*)?$ $1$2 permanent;
+              rewrite ^/(.*)/$ /$1 permanent;
+
+              try_files $uri/index.html $uri.html $uri/ $uri =404;
+          }
+
+          error_page   500 502 503 504  /50x.html;
+          location = /50x.html {
+              root   /usr/share/nginx/html;
+          }
+      }
+- name: Cloning jekyll-solana repo
+  git:
+    repo: https://github.com/rlue/jekyll-solana.git
+    dest: "/home/{{ username }}/src/jekyll-solana"
+- name: Creating post-receive hook
+  copy:
+    dest: "/home/{{ username }}/src/jekyll-solana/.git/hooks/post-receive"
+    mode: 0755
+    content: |
+      #!/bin/bash -l
+
+      export PATH="$HOME/.rbenv/shims:$HOME/.rbenv/bin:$PATH"
+      GIT_REPO="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && dirname "$(git rev-parse --git-dir)")"
+      PUBLIC_WWW=$HOME/www/solana.ryanlue.com
+
+      cd $GIT_REPO
+      bundle install
+      bundle exec jekyll build --source $GIT_REPO --destination $PUBLIC_WWW
+- name: Running post-receive hook
+  shell: "/home/{{ username }}/src/jekyll-solana/.git/hooks/post-receive"
+  args:
+    chdir: "/home/{{ username }}/src/jekyll-solana/.git/hooks"
+    creates: "/home/{{ username }}/www/solana.ryanlue.com"
+
+- name: Launching nginx-solana
+  docker_service:
+    project_name: nginx-solana
+    definition:
+      version: "2"
+      services:
+        nginx-solana:
+          restart: always
+          image: arm32v6/nginx:alpine
+          container_name: nginx-solana
+          networks:
+            - nginxproxy_default
+          volumes:
+            - "/home/{{ username }}/www/solana.ryanlue.com:/usr/share/nginx/html:ro"
+            - "/home/{{ username }}/.local/etc/nginx/solana.conf.d:/etc/nginx/conf.d"
+          environment:
+            VIRTUAL_HOST: solana.ryanlue.com
+            LETSENCRYPT_HOST: solana.ryanlue.com
+            LETSENCRYPT_EMAIL: hello@ryanlue.com
+      networks:
+        nginxproxy_default:
+          external: true

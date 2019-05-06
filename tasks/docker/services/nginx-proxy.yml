@@ -1,0 +1,43 @@
+---
+
+- name: Allowing HTTP/HTTPS connections in ufw
+  become: yes
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+  with_items:
+    - 80
+    - 443
+
+- name: Launching nginx-proxy
+  docker_service:
+    project_name: nginx-proxy
+    definition:
+      version: "2"
+      services:
+        nginx-proxy:
+          restart: always
+          image: braingamer/nginx-proxy-arm
+          container_name: nginx-proxy
+          ports:
+            - 80:80
+            - 443:443
+          environment:
+            DEFAULT_HOST: pihole.ryanlue.com
+          volumes:
+            - /etc/nginx/vhost.d
+            - /usr/share/nginx/html
+            - "/home/{{ username }}/.local/etc/nginx/certs:/etc/nginx/certs:ro"
+            - /var/run/docker.sock:/tmp/docker.sock:ro
+          labels:
+            com.github.jrcs.letsencrypt_nginx_proxy_companion.nginx_proxy: "true"
+
+        letsencrypt-nginx-proxy-companion:
+          restart: always
+          image: alexanderkrause/rpi-letsencrypt-nginx-proxy-companion
+          container_name: letsencrypt
+          volumes_from:
+            - nginx-proxy
+          volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - "/home/{{ username }}/.local/etc/nginx/certs:/etc/nginx/certs:rw"

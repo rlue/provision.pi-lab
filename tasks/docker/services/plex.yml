@@ -1,5 +1,46 @@
 ---
 
-- name: "Pulling Docker image: plex"
-  docker_image:
-    name: linuxserver/plex:arm64v8-latest
+- name: Getting user uid
+  command: "id -u {{ username }}"
+  register: uid
+  changed_when: no
+- name: Getting user gid
+  command: "id -g {{ username }}"
+  register: gid
+  changed_when: no
+- name: Launching plex
+  docker_service:
+    project_name: plex
+    definition:
+      version: "2"
+      services:
+        plex:
+          image: linuxserver/plex
+          container_name: plex
+          network_mode: host
+            # - nginxproxy_default
+          environment:
+            PUID: "{{ uid.stdout }}"
+            PGID: "{{ gid.stdout }}"
+            VERSION: docker
+            # VIRTUAL_HOST: plex.ryanlue.com
+            # VIRTUAL_PORT: 32400
+            # LETSENCRYPT_HOST: plex.ryanlue.com
+            # LETSENCRYPT_EMAIL: hello@ryanlue.com
+          volumes:
+            - "/home/{{ username }}/.local/etc/plex:/config"
+            - "/home/{{ username }}/media/movies:/data/movies"
+            - "/home/{{ username }}/media/tv:/data/tvshows"
+            - "/home/{{ username }}/media/music:/data/music"
+            # - </path for transcoding>:/transcode
+          # ports:
+          #   - 32400:32400
+          #   - 32400:32400/udp
+          #   - 32469:32469
+          #   - 32469:32469/udp
+          #   - 5353:5353/udp
+          #   - 1900:1900/udp
+          restart: unless-stopped
+      networks:
+        nginxproxy_default:
+          external: true
