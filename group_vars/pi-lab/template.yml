@@ -1,0 +1,33 @@
+---
+
+# network
+hostname: example
+local_subnet: 192.168.1.0/24
+wifi_country_code: US
+
+# user
+username: jdoe
+realname: John Doe
+ssh_key: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDbIgTx9SKQTMLYyLJB0vgGYo/ZaSnlRw289Vw9I9UGKJyD5RvnE1FFWuZD292WjxbK9RHhRM9QiNRcHIe/W9Bq56q5ndQDXjVTlf3Ccn6YVssAiO6DfqVJOCOzTNDpQQA0TAGnhmTDTZjQnSgEkHhttK6JLPbEIF8uViJxc4lGfZdoouotqBwx9xp73D55RP44ACkyS5vWAYvMrLIcgd6XE9jHTUSM5llVzGXvpHDpjZG9QcszyyupevraCjUymVcS6f+dPhSk4/xbnoP8h6VF8kcSTE+dR1poQIlrGw0azDmPWKXUeL7OzxRNMbhbg6BJRQ4EJMTpjGdYnWREn3J+pws6ykVNHTPd3eNns71KHLfJb31G4QLplXs33fN+1iVvgzKGHdU/ROdKdFXG2jPYLgVATHhG2Rj6FQr+WcU/G/TcTFmXXLjsIEB2vi0u1wxaNuKLyegY14jD498PzyYcFCXlSah6BZIXdwHQvhsZlNI3H+UDx9F4+Kl9lp8UwPkcKP/iOhYtBd9eockAiBv6YYYLWujSo3I8Lr7wgUCv4FFB9ZkoqGpfoi2csjD1kEdWtLoOOkBKIMN2glv7PE/dTnyUIS2eGvp4tngq6FGwTuQlrSGeBEiuWlrC1Pldj4W2SL1aj0JK9TauBi/gwWE1BAe6h6Pi/daCD9BwZtxWdQ== your_email@example.com
+
+# docker
+docker_username: jdoe
+docker_password: password
+timezone: America/Los_Angeles  # needed for ddclient and pihole containers
+
+# ddclient
+ddclient_config: |
+  use=web, web=<web>
+  protocol=<protocol>
+  server=<server>
+  login=<login>
+  password=<password>
+  @,www,pihole
+
+# syncthing (generate a BCrypt password hash at https://passwordhashing.com/BCrypt)
+syncthing_username: jdoe
+syncthing_password_hash: $2a$2a$10$w0PqpTIGq2mLSxq3HqLSfuQZFopCZ7yXFpG4KS5QFZuNJdWUmGx3m
+
+# pihole
+# NOTE: This password is exposed as an environment variable on the container
+pihole_password: password

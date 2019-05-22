@@ -13,7 +13,7 @@
     - install_docker
     - launch_docker_services
   vars_files:
-    - vars/vault.yml
+    - group_vars/pi-lab/vault
   vars_prompt:
     - name: ansible_become_pass
       prompt: "Enter password for {{ username }}@{{ hostname }}"
