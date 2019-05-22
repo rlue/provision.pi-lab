@@ -1,0 +1,11 @@
+---
+
+- import_tasks: nginx-proxy.yml
+- import_tasks: nginx-private.yml
+- import_tasks: nginx-blog.yml
+- import_tasks: nginx-solana.yml
+# - import_tasks: ddclient.yml
+- import_tasks: syncthing.yml
+- import_tasks: pihole.yml
+- import_tasks: plex.yml
+# - import_tasks: glances.yml

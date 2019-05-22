@@ -12,11 +12,11 @@
 - name: Getting user uid
   command: "id -u {{ username }}"
   register: uid
-  changed_when: False
+  changed_when: no
 - name: Getting user gid
   command: "id -g {{ username }}"
   register: gid
-  changed_when: False
+  changed_when: no
 - name: Launching ddclient
   docker_service:
     project_name: ddclient

@@ -1,0 +1,51 @@
+---
+
+- name: "Registering variable: architecture"
+  command: /usr/bin/dpkg --print-architecture
+  register: architecture
+  changed_when: no
+
+- name: "Registering variable: dist_version"
+  shell: /bin/grep ^VERSION= /etc/os-release | sed 's/^VERSION="[[:digit:]]\+ (\(.*\))"$/\1/'
+  register: dist_version
+  changed_when: no
+
+- name: Adding Docker APT key
+  become: yes
+  apt_key:
+    url: "https://download.docker.com/linux/raspbian/gpg"
+    state: present
+
+- name: Adding Docker APT repository
+  become: yes
+  apt_repository:
+    repo: "deb [arch={{ architecture.stdout }}] https://download.docker.com/linux/raspbian {{ dist_version.stdout }} stable"
+    state: present
+
+- block:
+  - name: Checking Docker package install status
+    command: "dpkg -s {{ packages | join(' ') }}"
+    changed_when: no
+  rescue:
+    - name: Installing Docker
+      become: yes
+      apt:
+        update_cache: yes
+        name: "{{ packages }}"
+
+- name: "Adding user {{ username }} to group docker"
+  become: yes
+  user:
+    name: "{{ username }}"
+    groups: docker
+    append: yes
+
+- name: Resetting ssh connection to apply new group privileges
+  meta: reset_connection
+
+# TODO: install & set up docker credential helper
+
+- name: Logging into Docker Hub
+  docker_login:
+    username: "{{ docker_username }}"
+    password: "{{ docker_password }}"

@@ -1,0 +1,30 @@
+---
+
+- name: Setting hostname
+  become: yes
+  hostname: { name: "{{ hostname }}" }
+  notify: Restarting avahi-daemon
+
+- name: Updating /etc/hosts file with new hostname
+  become: yes
+  lineinfile:
+    path: /etc/hosts
+    regexp: "^127.0.1.1\\s+(raspberrypi|{{ hostname }})"
+    line: "127.0.1.1	{{ hostname }}"
+
+- name: Setting Wi-Fi country
+  become: yes
+  copy:
+    dest: /etc/wpa_supplicant/wpa_supplicant.conf
+    mode: 0644
+    content: |
+      ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+      update_config=1
+      country={{ wifi_country_code }}
+  notify: Reconfiguring Wi-Fi network interface
+
+- import_tasks: ufw.yml
+  become: yes
+
+- import_tasks: sshd.yml
+  become: yes

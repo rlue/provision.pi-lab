@@ -5,11 +5,13 @@
 - hosts: pi-lab
   remote_user: "{{ username }}"
   gather_facts: no
-  tasks:
-    - include: tasks/init.yml
-      ignore_unreachable: yes
-    - include: tasks/config.yml
-    - include: tasks/docker.yml
+  roles:
+    - create_user_account
+    - install_apt_packages
+    - configure_network_services
+    - populate_homedir
+    - install_docker
+    - launch_docker_services
   vars_files:
     - vars/vault.yml
   vars_prompt:

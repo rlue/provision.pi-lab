@@ -1,52 +1,11 @@
 ---
 
-- name: Setting hostname
-  hostname: { name: "{{ hostname }}" }
-  register: set_hostname
-- name: Updating /etc/hosts file with new hostname
-  lineinfile:
-    path: /etc/hosts
-    regexp: "^127.0.1.1\\s+(raspberrypi|{{ hostname }})"
-    line: "127.0.1.1	{{ hostname }}"
-- name: Restarting avahi-daemon to register new hostname
-  service:
-    name: avahi-daemon
-    state: restarted
-  when: set_hostname.changed
-- name: Setting Wi-Fi country
-  copy:
-    dest: /etc/wpa_supplicant/wpa_supplicant.conf
-    mode: 0644
-    content: |
-      ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
-      update_config=1
-      country={{ wifi_country_code }}
-  register: set_wifi_country
-- name: Reconfigure Wi-Fi network interface to register new country
-  command: wpa_cli -i wlan0 reconfigure
-  when: set_wifi_country.changed
-- name: Enabling ufw
-  ufw:
-    state: enabled
-    policy: deny
-- name: Allowing SSH and select port connections in ufw
-  ufw:
-    rule: allow
-    port: "{{ item }}"
-  with_items:
-    - 22
-    - 2222
-    - 8080
-    - 8088
-- name: Allowing all local subnet connections in ufw
-  ufw:
-    rule: allow
-    from_ip: "{{ local_subnet }}"
 - name: Disabling password login for sshd 
   lineinfile:
     path: /etc/ssh/sshd_config
     regexp: '^#?PasswordAuthentication'
     line: 'PasswordAuthentication no'
+
 - name: Allowing password login on local subnet for sshd 
   blockinfile:
     path: /etc/ssh/sshd_config
@@ -63,7 +22,7 @@
     path: /etc/ssh/sshd_config
     regexp: '^#?AllowAgentForwarding'
     line: 'AllowAgentForwarding yes'
-  register: ssh_agent_forwarding
+  notify: Restarting sshd
 - name: Enablish SSH agent forwarding on localhost
   delegate_to: localhost
   become: no
@@ -77,9 +36,3 @@
     name: github.com
     path: /etc/ssh/ssh_known_hosts
     key: "|1|7dpt06ssisrL05Zl2bVNNINx8vc=|aTJu4GBIM88HyQztnoJF+FDQcxA= ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
-
-- name: Restarting sshd to activate new settings
-  service:
-    name: ssh
-    state: restarted
-  when: ssh_agent_forwarding.changed

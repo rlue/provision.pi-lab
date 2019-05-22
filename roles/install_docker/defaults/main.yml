@@ -1,0 +1,5 @@
+packages:
+  - docker-ce
+  - docker-ce-cli
+  - docker-compose
+  - python-docker

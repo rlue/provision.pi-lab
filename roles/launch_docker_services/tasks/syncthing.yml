@@ -45,7 +45,7 @@
 - name: Waiting for syncthing to generate config file
   wait_for:
     path: "/home/{{ username }}/.local/etc/syncthing/config.xml"
-  changed_when: False
+  changed_when: no
 - name: syncthing config - Setting device name
   xml:
     path: "/home/{{ username }}/.local/etc/syncthing/config.xml"

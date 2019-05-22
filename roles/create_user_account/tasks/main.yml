@@ -1,12 +1,19 @@
 ---
 
+- name: Validating credentials for default user (pi)
+  remote_user: pi
+  wait_for_connection: { timeout: 1 }
+  ignore_errors: yes
+  register: connection
+  changed_when: not connection.changed
+  notify: remove default user
+
 - block:
-  - name: "Verifying credentials for user {{ username }}"
+  - name: "Validating credentials for new user ({{ username }})"
     wait_for_connection: { timeout: 1 }
   rescue:
     - name: "Creating user {{ username }}"
       remote_user: pi
-      vars: { ansible_ssh_pass: raspberry }
       become: yes
       user:
         name: "{{ username }}"
@@ -17,23 +24,7 @@
         append: yes
     - name: Authorizing SSH key
       remote_user: pi
-      vars: { ansible_ssh_pass: raspberry }
       become: yes
       authorized_key:
         user: "{{ username }}"
         key: "{{ ssh_key }}"
-- name: Getting default user's processes
-  shell: "ps -Upi -upi | grep -v grep | sed 1d | awk '{print $1}'"
-  register: pi_processes
-  changed_when: pi_processes.stdout != ""
-- name: Waiting for default user's processes to die
-  wait_for:
-    path: "/proc/{{ item }}/status"
-    state: absent
-  with_items: "{{ pi_processes.stdout_lines }}"
-- name: Removing default user
-  become: yes
-  user:
-    name: pi
-    state: absent
-    remove: yes

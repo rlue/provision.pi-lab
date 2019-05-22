@@ -1,0 +1,21 @@
+---
+
+- name: Enabling ufw
+  ufw:
+    state: enabled
+    policy: deny
+
+- name: Allowing all local subnet connections in ufw
+  ufw:
+    rule: allow
+    from_ip: "{{ local_subnet }}"
+
+- name: Allowing SSH and select port connections in ufw
+  ufw:
+    rule: allow
+    port: "{{ item }}"
+  with_items:
+    - 22
+    - 2222
+    - 8080
+    - 8088

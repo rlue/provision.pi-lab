@@ -1,0 +1,15 @@
+---
+
+- name: Restarting avahi-daemon
+  service:
+    name: avahi-daemon
+    state: restarted
+
+- name: Reconfiguring Wi-Fi network interface
+  command: wpa_cli -i wlan0 reconfigure
+
+- name: Restarting sshd
+  service:
+    name: ssh
+    state: restarted
+  when: ssh_agent_forwarding.changed

@@ -1,0 +1,13 @@
+---
+
+base_packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg
+  - pass
+  - git
+  - stow
+  - ufw
+  - fail2ban
+  - vim

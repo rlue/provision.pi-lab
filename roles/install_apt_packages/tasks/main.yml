@@ -1,0 +1,12 @@
+---
+
+- block:
+  - name: Checking package install status
+    command: "dpkg -s {{ base_packages | join(' ') }}"
+    changed_when: no
+  rescue:
+    - name: Installing base packages
+      become: yes
+      apt:
+        update_cache: yes
+        name: "{{ base_packages }}"

@@ -1,5 +1,0 @@
----
-
-- include: docker/install.yml
-- include: docker/init.yml
-- include: docker/services.yml
