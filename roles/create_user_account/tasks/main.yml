@@ -1,13 +1,5 @@
 ---
 
-- name: Validating credentials for default user (pi)
-  remote_user: pi
-  wait_for_connection: { timeout: 1 }
-  ignore_errors: yes
-  register: connection
-  changed_when: not connection.changed
-  notify: remove default user
-
 - block:
   - name: "Validating credentials for new user ({{ username }})"
     wait_for_connection: { timeout: 1 }
@@ -28,3 +20,10 @@
       authorized_key:
         user: "{{ username }}"
         key: "{{ ssh_key }}"
+
+- name: Validating credentials for default user (pi)
+  command: id pi
+  register: default_user
+  changed_when: default_user.rc == 0
+  ignore_errors: yes
+  notify: remove default user
