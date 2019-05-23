@@ -26,3 +26,9 @@
   command: "stow --stow --dir=$HOME/.config --verbose ."
   register: stow
   changed_when: stow.stderr != ""
+
+- name: Setting permissions on .config/gnupg
+  file:
+    path: .config/gnupg
+    mode: 0700
+  ignore_errors: yes

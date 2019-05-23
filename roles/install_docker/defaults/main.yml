@@ -3,3 +3,4 @@ packages:
   - docker-ce-cli
   - docker-compose
   - python-docker
+  - golang-go

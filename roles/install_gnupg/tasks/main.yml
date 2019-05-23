@@ -1,0 +1,26 @@
+---
+
+- block:
+  - name: Checking gnupg install status
+    command: "dpkg -s gnupg"
+    changed_when: no
+  rescue:
+    - name: Installing gnupg
+      become: yes
+      apt: { name: gnupg }
+
+- name: Initializing gpg config directory
+  command: gpg --homedir .config/gnupg --list-keys
+  register: keys
+  changed_when: keys.stderr != ""
+
+- name: Checking presence of private key
+  command: gpg --homedir .config/gnupg --list-secret-keys
+  register: secret_keys
+  changed_when: no
+
+- name: Generating a GPG keypair
+  shell: gpgconf --kill gpg-agent && gpg --homedir .config/gnupg --batch --quick-generate-key --passphrase '' {{ gnupg_email }}
+  args:
+    creates: .config/gnupg/private-keys-v1.d
+  when: secret_keys.stdout == ""

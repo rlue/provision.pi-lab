@@ -1,0 +1,74 @@
+---
+
+- name: Checking presence of docker-credential-pass
+  stat: 
+    path: .local/bin/docker-credential-pass
+  register: docker_credential_pass
+  changed_when: no
+
+- name: Cloning docker-credential-helpers repo
+  git:
+    repo: https://github.com/docker/docker-credential-helpers
+    dest: go/src/github.com/docker/docker-credential-helpers
+  when: docker_credential_pass.stat.exists == False
+
+- name: Building docker-credential-pass
+  shell: make pass
+  environment:
+    GOPATH: "/home/{{ username }}/go"
+  args:
+    chdir: go/src/github.com/docker/docker-credential-helpers
+  when: docker_credential_pass.stat.exists == False
+
+- name: Creating ~/.local/bin directory
+  file:
+    state: directory
+    path: .local/bin
+
+- name: Moving docker-credential-pass to ~/.local/bin
+  command: mv go/src/github.com/docker/docker-credential-helpers/bin/docker-credential-pass .local/bin/
+  when: docker_credential_pass.stat.exists == False
+
+- name: Removing docker-credential-pass source directory
+  file:
+    state: absent
+    path: go/src/github.com/docker/docker-credential-helpers
+
+- name: Cleaning up empty $GOPATH
+  command: find go -type d -empty -delete
+  ignore_errors: yes
+  register: clean_up_gopath
+  changed_when: clean_up_gopath.rc == 0
+
+- name: Ensuring presence of Docker config dir
+  file:
+    state: directory
+    path: .docker
+
+# FIXME: do this totally idempotently?
+- name: Creating Docker config
+  copy:
+    dest: .docker/config.json
+    mode: 0600
+    content: |
+      {
+        "auths": {
+                "https://index.docker.io/v1/": {}
+        },
+        "credsStore": "pass"
+      }
+
+- name: Checking for presence of docker login credentials
+  shell: "pass ls docker-credential-helpers | grep rlue"
+  environment:
+    PASSWORD_STORE_DIR: "/home/rlue/.config/pass"
+  changed_when: false
+  ignore_errors: yes
+  register: docker_login_creds
+
+- name: Logging into Docker Hub  # docker_login module bad. It no use docker-credential-pass.
+  shell: "PATH=\"$HOME/.local/bin:$PATH\" docker login -u{{ docker_username }} -p{{ docker_password }}"
+  environment:
+    PASSWORD_STORE_DIR: "/home/{{ username }}/.config/pass"
+    GNUPGHOME: "/home/{{ username }}/.config/gnupg"
+  when: docker_login_creds.rc != 0

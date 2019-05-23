@@ -43,9 +43,4 @@
 - name: Resetting ssh connection to apply new group privileges
   meta: reset_connection
 
-# TODO: install & set up docker credential helper
-
-- name: Logging into Docker Hub
-  docker_login:
-    username: "{{ docker_username }}"
-    password: "{{ docker_password }}"
+- import_tasks: authenticate.yml

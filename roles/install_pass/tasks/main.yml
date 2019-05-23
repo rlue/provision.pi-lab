@@ -1,0 +1,17 @@
+---
+
+- block:
+  - name: Checking pass install status
+    command: "dpkg -s pass"
+    changed_when: no
+  rescue:
+    - name: Installing pass
+      become: yes
+      apt: { name: pass }
+
+- name: Initializing pass
+  shell: "pass init {{ gnupg_email }}"
+  environment:
+    PASSWORD_STORE_DIR: "/home/{{ username }}/.config/pass"
+  args:
+    creates: .config/pass
