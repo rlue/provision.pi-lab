@@ -3,10 +3,10 @@
 - name: Creating ryanlue.com nginx config directory
   file:
     state: directory
-    path: "/home/{{ username }}/.local/etc/nginx/blog.conf.d"
+    path: .local/etc/nginx/blog.conf.d
 - name: Creating ryanlue.com nginx config
   copy:
-    dest: "/home/{{ username }}/.local/etc/nginx/blog.conf.d/default.conf"
+    dest: .local/etc/nginx/blog.conf.d/default.conf
     mode: 0644
     content: |
       server {
@@ -32,10 +32,10 @@
 - name: Cloning ryanlue.com repo
   git:
     repo: https://github.com/rlue/ryanlue.com.git
-    dest: "/home/{{ username }}/src/ryanlue.com"
+    dest: src/ryanlue.com
 - name: Creating post-receive hook
   copy:
-    dest: "/home/{{ username }}/src/ryanlue.com/.git/hooks/post-receive"
+    dest: src/ryanlue.com/.git/hooks/post-receive
     mode: 0755
     content: |
       #!/bin/bash -l
@@ -48,10 +48,10 @@
       bundle install
       bundle exec jekyll build --source $GIT_REPO --destination $PUBLIC_WWW
 - name: Running post-receive hook
-  shell: "/home/{{ username }}/src/ryanlue.com/.git/hooks/post-receive"
+  shell: ./post-receive
   args:
-    chdir: "/home/{{ username }}/src/ryanlue.com/.git/hooks"
-    creates: "/home/{{ username }}/www/ryanlue.com"
+    chdir: src/ryanlue.com/.git/hooks
+    creates: ../../../../www/ryanlue.com
 
 - name: Launching nginx-blog
   docker_service:

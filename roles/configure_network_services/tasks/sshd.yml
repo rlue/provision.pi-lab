@@ -27,7 +27,7 @@
   delegate_to: localhost
   become: no
   blockinfile:
-    path: "$HOME/.ssh/config"
+    path: $HOME/.ssh/config
     block: |
       Host          {{ inventory_hostname }}
       ForwardAgent  yes

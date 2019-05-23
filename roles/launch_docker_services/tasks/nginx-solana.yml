@@ -3,10 +3,10 @@
 - name: Creating solana.ryanlue.com nginx config directory
   file:
     state: directory
-    path: "/home/{{ username }}/.local/etc/nginx/solana.conf.d"
+    path: .local/etc/nginx/solana.conf.d
 - name: Creating solana.ryanlue.com nginx config
   copy:
-    dest: "/home/{{ username }}/.local/etc/nginx/solana.conf.d/default.conf"
+    dest: .local/etc/nginx/solana.conf.d/default.conf
     mode: 0644
     content: |
       server {
@@ -32,10 +32,10 @@
 - name: Cloning jekyll-solana repo
   git:
     repo: https://github.com/rlue/jekyll-solana.git
-    dest: "/home/{{ username }}/src/jekyll-solana"
+    dest: src/jekyll-solana
 - name: Creating post-receive hook
   copy:
-    dest: "/home/{{ username }}/src/jekyll-solana/.git/hooks/post-receive"
+    dest: src/jekyll-solana/.git/hooks/post-receive
     mode: 0755
     content: |
       #!/bin/bash -l
@@ -48,10 +48,10 @@
       bundle install
       bundle exec jekyll build --source $GIT_REPO --destination $PUBLIC_WWW
 - name: Running post-receive hook
-  shell: "/home/{{ username }}/src/jekyll-solana/.git/hooks/post-receive"
+  shell: ./post-receive
   args:
-    chdir: "/home/{{ username }}/src/jekyll-solana/.git/hooks"
-    creates: "/home/{{ username }}/www/solana.ryanlue.com"
+    chdir: src/jekyll-solana/.git/hooks
+    creates: ../../../../www/solana.ryanlue.com
 
 - name: Launching nginx-solana
   docker_service:

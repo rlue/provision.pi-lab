@@ -3,10 +3,10 @@
 - name: Creating private.ryanlue.com nginx config directory
   file:
     state: directory
-    path: "/home/{{ username }}/.local/etc/nginx/private.conf.d"
+    path: .local/etc/nginx/private.conf.d
 - name: Creating private.ryanlue.com nginx config
   copy:
-    dest: "/home/{{ username }}/.local/etc/nginx/private.conf.d/default.conf"
+    dest: .local/etc/nginx/private.conf.d/default.conf
     mode: 0644
     content: |
       server {
@@ -29,7 +29,7 @@
 - name: Cloning private.ryanlue.com repo
   git:
     repo: git@github.com:rlue/private.ryanlue.com.git
-    dest: "/home/{{ username }}/www/private.ryanlue.com"
+    dest: www/private.ryanlue.com
 
 - name: Launching nginx-private
   docker_service:

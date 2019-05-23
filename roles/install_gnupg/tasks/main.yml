@@ -2,7 +2,7 @@
 
 - block:
   - name: Checking gnupg install status
-    command: "dpkg -s gnupg"
+    command: dpkg -s gnupg
     changed_when: no
   rescue:
     - name: Installing gnupg

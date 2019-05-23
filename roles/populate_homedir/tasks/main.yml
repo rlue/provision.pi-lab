@@ -3,12 +3,12 @@
 - name: Creating src/ directory
   file:
     state: directory
-    path: "/home/{{ username }}/src"
+    path: src
 
 - name: Cloning user .config repo
   git:
-    repo: 'https://github.com/rlue/.config.git'
-    dest: "/home/{{ username }}/.config"
+    repo: https://github.com/rlue/.config.git
+    dest: .config
     update: no
 
 - name: Getting redundant dotfiles
@@ -18,12 +18,12 @@
 
 - name: Removing redundant dotfiles
   file:
-    path: "/home/{{ username }}/{{ item }}"
+    path: "{{ item }}"
     state: absent
   with_items: "{{ redundant_dotfiles.stdout_lines }}"
 
 - name: Stowing .config files
-  command: "stow --stow --dir=$HOME/.config --verbose ."
+  command: stow --stow --dir=$HOME/.config --verbose .
   register: stow
   changed_when: stow.stderr != ""
 

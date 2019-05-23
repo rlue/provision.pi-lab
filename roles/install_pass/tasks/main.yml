@@ -2,7 +2,7 @@
 
 - block:
   - name: Checking pass install status
-    command: "dpkg -s pass"
+    command: dpkg -s pass
     changed_when: no
   rescue:
     - name: Installing pass

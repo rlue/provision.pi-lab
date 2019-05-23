@@ -3,10 +3,10 @@
 - name: Creating ddclient config directory
   file:
     state: directory
-    path: "/home/{{ username }}/.local/etc/ddclient"
+    path: .local/etc/ddclient
 - name: Copying ddclient.conf
   copy:
-    dest: "/home/{{ username }}/.local/etc/ddclient/ddclient.conf"
+    dest: .local/etc/ddclient/ddclient.conf
     mode: 0644
     content: "{{ ddclient_config }}"
 - name: Getting user uid
