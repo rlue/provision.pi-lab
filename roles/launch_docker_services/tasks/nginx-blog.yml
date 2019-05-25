@@ -61,7 +61,7 @@
       services:
         nginx-blog:
           restart: always
-          image: arm32v6/nginx:alpine
+          image: nginx
           container_name: nginx-blog
           networks:
             - nginxproxy_default

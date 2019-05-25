@@ -39,7 +39,7 @@
       services:
         nginx-private:
           restart: always
-          image: arm32v6/nginx:alpine
+          image: nginx
           container_name: nginx-private
           networks:
             - nginxproxy_default

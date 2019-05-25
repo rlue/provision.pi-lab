@@ -61,7 +61,7 @@
       services:
         nginx-solana:
           restart: always
-          image: arm32v6/nginx:alpine
+          image: nginx
           container_name: nginx-solana
           networks:
             - nginxproxy_default
