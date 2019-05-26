@@ -25,5 +25,5 @@
   command: id pi
   register: default_user
   changed_when: default_user.rc == 0
-  ignore_errors: yes
+  failed_when: no
   notify: remove default user

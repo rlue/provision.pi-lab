@@ -31,4 +31,4 @@
   file:
     path: .config/gnupg
     mode: 0700
-  ignore_errors: yes
+  failed_when: no

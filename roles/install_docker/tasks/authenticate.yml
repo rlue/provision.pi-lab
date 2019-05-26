@@ -36,7 +36,7 @@
 
 - name: Cleaning up empty $GOPATH
   command: find go -type d -empty -delete
-  ignore_errors: yes
+  failed_when: no
   register: clean_up_gopath
   changed_when: clean_up_gopath.rc == 0
 
@@ -58,17 +58,15 @@
         "credsStore": "pass"
       }
 
-- name: Checking for presence of docker login credentials
-  shell: "pass ls docker-credential-helpers | grep rlue"
-  environment:
-    PASSWORD_STORE_DIR: "/home/rlue/.config/pass"
-  changed_when: false
-  ignore_errors: yes
-  register: docker_login_creds
-
-- name: Logging into Docker Hub  # docker_login module bad. It no use docker-credential-pass.
-  shell: "PATH=\"$HOME/.local/bin:$PATH\" docker login -u{{ docker_username }} -p{{ docker_password }}"
-  environment:
-    PASSWORD_STORE_DIR: "/home/{{ username }}/.config/pass"
-    GNUPGHOME: "/home/{{ username }}/.config/gnupg"
-  when: docker_login_creds.rc != 0
+- block:
+  - name: Checking for presence of docker login credentials
+    shell: "pass ls docker-credential-helpers | grep rlue"
+    environment:
+      PASSWORD_STORE_DIR: "/home/rlue/.config/pass"
+    changed_when: false
+  rescue:
+    - name: Logging into Docker Hub  # docker_login module bad. It no use docker-credential-pass.
+      shell: "PATH=\"$HOME/.local/bin:$PATH\" docker login -u{{ docker_username }} -p{{ docker_password }}"
+      environment:
+        PASSWORD_STORE_DIR: "/home/{{ username }}/.config/pass"
+        GNUPGHOME: "/home/{{ username }}/.config/gnupg"
