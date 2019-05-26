@@ -9,3 +9,4 @@ base_packages:
   - ufw
   - fail2ban
   - vim
+  - jq

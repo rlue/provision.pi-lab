@@ -7,10 +7,10 @@ Ansible playbook for provisioning a Raspberry Pi as a home server, running:
 * multiple nginx static web servers (blog, Jekyll theme demo site, etc.)
 * ddclient (automated dynamic DNS renewal)
 * Pi-hole (DNS-level adblocking)
+* syncthing (file synchronization)
 
 ### TODO
 
-* syncthing (file synchronization)
 * restic (scheduled backups)
 * Plex Media Server
 * TIG stack (Telegraf, InfluxDB, Grafana)?

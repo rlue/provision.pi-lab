@@ -11,6 +11,42 @@
   command: "id -g {{ username }}"
   register: gid
   changed_when: no
+- name: Getting local username
+  delegate_to: localhost
+  command: whoami
+  register: local_username
+  changed_when: no
+- name: Getting local hostname
+  delegate_to: localhost
+  command: hostname
+  register: local_hostname
+  changed_when: no
+- name: Getting local host device id
+  delegate_to: localhost
+  command: syncthing -device-id
+  register: local_device_id
+  changed_when: no
+- name: Getting path to local host config file
+  delegate_to: localhost
+  shell: "syncthing -paths | grep config.xml | awk '{ print $1 }'"
+  register: local_config_path
+  changed_when: no
+- name: Getting local host API key
+  delegate_to: localhost
+  xml:
+    path: "{{ local_config_path.stdout }}"
+    xpath: "/configuration/gui/apikey"
+    content: text
+  register: local_host_api_key
+  changed_when: no
+- name: Getting local host folders
+  delegate_to: localhost
+  shell: "curl --silent --insecure --header \"X-API-Key: {{ local_host_api_key.matches[0].apikey }}\" https://localhost:8384/rest/system/config | jq '.folders[] | .label + \":\" + .id' | sed 's/\"\\(.*\\)\"/\\1/'"
+  args:
+    warn: no
+  register: local_folders
+  changed_when: no
+
 - name: Launching syncthing
   docker_service:
     project_name: syncthing
@@ -27,13 +63,14 @@
             PGID: "{{ gid.stdout }}"
             TZ: "{{ timezone }}"
             UMASK_SET: <022>
+            STNODEFAULTFOLDER: "true"
             VIRTUAL_HOST: syncthing.ryanlue.com
             VIRTUAL_PORT: 8384
             LETSENCRYPT_HOST: syncthing.ryanlue.com
             LETSENCRYPT_EMAIL: hello@ryanlue.com
           volumes:
             - "/home/{{ username }}/.local/etc/syncthing:/config"
-            # - "/home/{{ username }}/foo:/home/rlue"  # FIXME
+            - "/media/data/{{ local_username.stdout }}:/{{ local_username.stdout }}"
           ports:
             - 8384:8384
             - 22000:22000
@@ -42,89 +79,90 @@
       networks:
         nginxproxy_default:
           external: true
+
+- name: Setting owner on sync directory
+  become: yes
+  file:
+    path: "/media/data/{{ local_username.stdout }}"
+    state: directory
+    owner: "{{ username }}"
+
 - name: Waiting for syncthing to generate config file
   wait_for:
     path: .local/etc/syncthing/config.xml
   changed_when: no
-- name: syncthing config - Setting device name
+
+- name: Getting remote host device id
+  command: docker exec syncthing syncthing -home=/config -device-id
+  register: remote_device_id
+  changed_when: no
+
+# NOTE: This task _must_ come first;
+# it will rewrite any other changes to the config file.
+- name: Linking local host in remote device list
+  syncthing_device:
+    id: "{{ local_device_id.stdout }}"
+    name: "{{ local_hostname.stdout }}"
+  register: add_local_device
+
+- name: Configuration local host as introducer
   xml:
     path: .local/etc/syncthing/config.xml
-    xpath: /configuration/device[1]
-    attribute: name
-    value: "{{ hostname }}"
-  register: config_device
-- name: syncthing config - Removing default sync folder
-  xml:
-    path: .local/etc/syncthing/config.xml
-    xpath: /configuration/folder[@id="default"]
-    state: absent
-  register: config_sync_folder
-- name: syncthing config - Setting username for GUI authentication in config
-  xml:
-    path: .local/etc/syncthing/config.xml
-    xpath: /configuration/gui/user
-    state: present
-    value: "{{ syncthing_username }}"
-  register: config_username
-- name: syncthing config - Setting password for GUI authentication in config
-  xml:
-    path: .local/etc/syncthing/config.xml
-    xpath: /configuration/gui/password
-    state: present
-    value: "{{ syncthing_password_hash }}"
-  register: config_password
-- name: Removing default sync directory
-  file:
-    path: .local/etc/syncthing/Sync
-    state: absent
-  register: rm_default_folder
+    xpath: "/configuration/device[@id=\"{{ local_device_id.stdout }}\"]"
+    attribute: introducer
+    value: "true"
+  register: introducer
+
 - name: Restarting syncthing
   docker_container:
     name: syncthing
     state: started
     restart: yes
-  when: config_device.changed or config_sync_folder.changed or config_username.changed or config_password.changed or rm_default_folder.changed
+  when: add_local_device.changed or introducer.changed
 
-# TODO determine paths to bind volumes to
-# TODO update config.xml with...
-#   (get folders & devices from localhost?)
-#   * folders & devices
-# <folder id="jwbul-zqfqy" label="Home" path="/home/rlue" type="sendreceive" rescanIntervalS="3600" fsWatcherEnabled="true" fsWatcherDelayS="10" ignorePerms="false" autoNormalize="true">
-#     <filesystemType>basic</filesystemType>
-#     <device id="D3WAARE-3Q6ALOB-JCMZ75U-26ZVNW3-XVSEDBQ-GJMDFFQ-MYX47EL-Y5ACTAK" introducedBy=""></device>
-#     <device id="HWV3NFD-2YKXUCD-Q3ZX46C-WHLC3AT-ZKOLMON-7KRF3OE-E74CGR5-W5Z5MQV" introducedBy=""></device>
-#     <device id="JPD5SLE-QLIPC4E-HVZRZF4-KHPLIPQ-O5ZWXZB-EHRKUUN-TEATZCC-YADUKQQ" introducedBy=""></device>
-#     <minDiskFree unit="%">1</minDiskFree>
-#     <versioning></versioning>
-#     <copiers>0</copiers>
-#     <pullerMaxPendingKiB>0</pullerMaxPendingKiB>
-#     <hashers>0</hashers>
-#     <order>random</order>
-#     <ignoreDelete>false</ignoreDelete>
-#     <scanProgressIntervalS>0</scanProgressIntervalS>
-#     <pullerPauseS>0</pullerPauseS>
-#     <maxConflicts>10</maxConflicts>
-#     <disableSparseFiles>false</disableSparseFiles>
-#     <disableTempIndexes>false</disableTempIndexes>
-#     <paused>false</paused>
-#     <weakHashThresholdPct>25</weakHashThresholdPct>
-#     <markerName>.stfolder</markerName>
-#     <useLargeBlocks>false</useLargeBlocks>
-#     <copyOwnershipFromParent>false</copyOwnershipFromParent>
-# </folder>
-# <device id="D3WAARE-3Q6ALOB-JCMZ75U-26ZVNW3-XVSEDBQ-GJMDFFQ-MYX47EL-Y5ACTAK" name="herringbone" compression="metadata" introducer="false" skipIntroductionRemovals="false" introducedBy="">
-#     <address>dynamic</address>
-#     <paused>false</paused>
-#     <autoAcceptFolders>false</autoAcceptFolders>
-#     <maxSendKbps>0</maxSendKbps>
-#     <maxRecvKbps>0</maxRecvKbps>
-#     <maxRequestKiB>0</maxRequestKiB>
-# </device>
-# <device id="HWV3NFD-2YKXUCD-Q3ZX46C-WHLC3AT-ZKOLMON-7KRF3OE-E74CGR5-W5Z5MQV" name="shibori" compression="metadata" introducer="false" skipIntroductionRemovals="false" introducedBy="">
-#     <address>dynamic</address>
-#     <paused>false</paused>
-#     <autoAcceptFolders>false</autoAcceptFolders>
-#     <maxSendKbps>0</maxSendKbps>
-#     <maxRecvKbps>0</maxRecvKbps>
-#     <maxRequestKiB>0</maxRequestKiB>
-# </device>
+- name: Adding local folders to remote folder list
+  syncthing_folder:
+    path: "/{{ local_username.stdout }}/{{ item.split(':') | first | lower }}"
+    id: "{{ item.split(':') | last }}"
+    devices:
+      - "{{ local_device_id.stdout }}"
+  with_items: "{{ local_folders.stdout_lines }}"
+  register: add_local_folders
+
+- name: Restarting syncthing
+  docker_container:
+    name: syncthing
+    state: started
+    restart: yes
+  when: add_local_folders.changed
+
+- name: Setting device name
+  xml:
+    path: .local/etc/syncthing/config.xml
+    xpath: "/configuration/device[@id=\"{{ remote_device_id.stdout }}\"]"
+    attribute: name
+    value: "{{ hostname }}"
+  register: device_name
+
+- name: Setting username for GUI authentication in config
+  xml:
+    path: .local/etc/syncthing/config.xml
+    xpath: /configuration/gui/user
+    state: present
+    value: "{{ syncthing_username }}"
+  register: st_username
+
+- name: Setting password for GUI authentication in config
+  xml:
+    path: .local/etc/syncthing/config.xml
+    xpath: /configuration/gui/password
+    state: present
+    value: "{{ syncthing_password_hash }}"
+  register: st_password
+
+- name: Restarting syncthing
+  docker_container:
+    name: syncthing
+    state: started
+    restart: yes
+  when: device_name.changed or st_username.changed or st_password.changed
