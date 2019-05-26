@@ -1,0 +1,45 @@
+---
+
+- name: Creating /media/data directory
+  become: yes
+  file:
+    state: directory
+    path: /media/data
+
+- name: Finding largest USB storage device (HDD) attached to system
+  shell: "lsblk --scsi --noheadings --output NAME,SIZE | sort --reverse --human-numeric-sort --key 1 | awk '{ print $1 }' | head --lines=1"
+  register: usb_storage
+  changed_when: no
+
+- name: Checking partition count on HDD
+  shell: "lsblk --noheadings --output type /dev/{{ usb_storage.stdout }} | grep part$ | wc -l"
+  register: usb_storage_partitions
+  when: usb_storage.stdout != ""
+  changed_when: no
+  failed_when: usb_storage_partitions.stdout|int > 1
+
+- name: Partitioning and formatting HDD
+  become: yes
+  shell: "echo -e \"g\\nn\\n1\\n\\n\\nw\\n\" | fdisk /dev/{{ usb_storage.stdout }}; mkfs.ext4 /dev/{{ usb_storage.stdout }}1"
+  when: usb_storage.stdout != "" and usb_storage_partitions.stdout|int == 0
+
+- name: Getting UUID of new partition
+  shell: "lsblk --noheadings --output UUID /dev/{{ usb_storage.stdout }}1"
+  register: usb_storage_uuid
+  when: usb_storage.stdout != ""
+  changed_when: no
+
+- name: Adding entry for HDD to fstab
+  become: yes
+  lineinfile:
+    path: /etc/fstab
+    regexp: "^(PART)?UUID=\\S+\\s+/media/data"
+    line: "UUID={{ usb_storage_uuid.stdout }}	/media/data	ext4 defaults,nofail	0	2"
+    backup: yes
+  register: fstab
+  when: usb_storage.stdout != ""
+
+- name: Mounting HDD
+  become: yes
+  shell: umount /media/data; mount -a
+  when: fstab.changed

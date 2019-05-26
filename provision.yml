@@ -9,6 +9,7 @@
     - create_user_account
     - install_apt_packages
     - configure_network_services
+    - configure_usb_storage
     - populate_homedir
     - install_docker
     - launch_docker_services
