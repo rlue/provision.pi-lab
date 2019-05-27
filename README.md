@@ -5,6 +5,7 @@ Ansible playbook for provisioning a Raspberry Pi as a home server, running:
 
 * nginx reverse proxy + automated letsencrypt certificate renewal
 * multiple nginx static web servers (blog, Jekyll theme demo site, etc.)
+* a Grav CMS website
 * ddclient (automated dynamic DNS renewal)
 * Pi-hole (DNS-level adblocking)
 * syncthing (file synchronization)
