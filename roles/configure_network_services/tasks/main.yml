@@ -1,5 +1,16 @@
 ---
 
+- block:
+  - name: Checking network package install status
+    command: "dpkg -s {{ packages | join(' ') }}"
+    changed_when: no
+  rescue:
+    - name: Installing network packages
+      become: yes
+      apt:
+        update_cache: yes
+        name: "{{ packages }}"
+
 - name: Setting hostname
   become: yes
   hostname: { name: "{{ hostname }}" }
@@ -27,4 +38,7 @@
   become: yes
 
 - import_tasks: sshd.yml
+  become: yes
+
+- import_tasks: nfs.yml
   become: yes

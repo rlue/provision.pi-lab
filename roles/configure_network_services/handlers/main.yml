@@ -1,6 +1,7 @@
 ---
 
 - name: Restarting avahi-daemon
+  become: yes
   service:
     name: avahi-daemon
     state: restarted
@@ -9,7 +10,13 @@
   command: wpa_cli -i wlan0 reconfigure
 
 - name: Restarting sshd
+  become: yes
   service:
     name: ssh
     state: restarted
-  when: ssh_agent_forwarding.changed
+
+- name: Restarting nfs
+  become: yes
+  service:
+    name: nfs-kernel-server
+    state: restarted

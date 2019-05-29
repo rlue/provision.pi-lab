@@ -6,7 +6,5 @@ base_packages:
   - curl
   - git
   - stow
-  - ufw
-  - fail2ban
   - vim
   - jq
