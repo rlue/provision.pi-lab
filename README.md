@@ -9,10 +9,10 @@ Ansible playbook for provisioning a Raspberry Pi as a home server, running:
 * ddclient (automated dynamic DNS renewal)
 * Pi-hole (DNS-level adblocking)
 * syncthing (file synchronization)
+* restic (scheduled backups)
 
 ### TODO
 
-* restic (scheduled backups)
 * Plex Media Server
 * TIG stack (Telegraf, InfluxDB, Grafana)?
 

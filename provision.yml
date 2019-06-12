@@ -10,6 +10,7 @@
     - install_apt_packages
     - configure_network_services
     - configure_usb_storage
+    - configure_scheduled_backups
     - populate_homedir
     - install_docker
     - launch_docker_services

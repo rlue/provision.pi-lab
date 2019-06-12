@@ -1,5 +1,8 @@
 ---
 
+# system
+timezone: America/Los_Angeles  # needed for restic cronjob and ddclient/pihole containers
+
 # network
 hostname: example
 local_subnet: 192.168.1.0/24
@@ -16,7 +19,6 @@ gnupg_email: jdoe@example.com
 # docker
 docker_username: jdoe
 docker_password: password
-timezone: America/Los_Angeles  # needed for ddclient and pihole containers
 
 # ddclient
 ddclient_config: |

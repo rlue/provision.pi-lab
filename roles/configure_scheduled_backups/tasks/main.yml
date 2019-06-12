@@ -1,0 +1,99 @@
+---
+# TODO Use application keys instead of master key
+#      https://github.com/restic/restic/issues/2293
+
+- block:
+  - name: Checking presence of restic binary
+    command: /usr/local/bin/restic version
+  rescue:
+    - name: Finding latest restic release
+      shell: "curl https://api.github.com/repos/restic/restic/releases | jq '.[0].assets' | grep 'browser_download_url.*linux_arm\\.bz2' | sed 's/.*\"\\(https.*bz2\\)\"/\\1/'"
+      args:
+        warn: no
+      register: restic_url
+    - name: Downloading latest restic release
+      get_url:
+        url: "{{ restic_url.stdout }}"
+        dest: restic.bz2
+    - name: Extracting restic binary
+      command: bunzip2 restic.bz2
+    - name: Setting permissions on restic binary
+      become: yes
+      file:
+        owner: root
+        group: staff
+        mode: 0755
+    - name: Moving restic binary to /usr/local/bin
+      become: yes
+      command: mv restic /usr/local/bin
+
+- block:
+  - name: Checking password store for restic repo password
+    shell: "pass web/backblaze/{{ hostname }}.repo"
+    environment:
+      PASSWORD_STORE_DIR: "/home/{{ username }}/.config/pass"
+      GNUPGHOME: "/home/{{ username }}/.config/gnupg"
+  rescue:
+    - name: Gathering restic repo password
+      delegate_to: localhost
+      command: "pass web/backblaze/{{ hostname }}.repo"
+      register: repo_pass
+    - name: Adding restic repo password to password store
+      shell: "echo \"{{ repo_pass.stdout }}\\n{{ repo_pass.stdout }}\\n\" | pass insert web/backblaze/{{ hostname }}.repo"
+      environment:
+        PASSWORD_STORE_DIR: "/home/{{ username }}/.config/pass"
+        GNUPGHOME: "/home/{{ username }}/.config/gnupg"
+
+- block:
+  - name: Checking password store for application ID
+    # shell: "pass web/backblaze/{{ hostname }}.id"
+    shell: "pass web/backblaze/master.id"
+    environment:
+      PASSWORD_STORE_DIR: "/home/{{ username }}/.config/pass"
+      GNUPGHOME: "/home/{{ username }}/.config/gnupg"
+  rescue:
+    - name: Gathering Backblaze application ID
+      delegate_to: localhost
+      # command: "pass web/backblaze/{{ hostname }}.id"
+      command: "pass web/backblaze/master.id"
+      register: application_id
+    - name: Adding application ID to password store
+      # shell: "echo \"{{ application_id.stdout }}\\n{{ application_id.stdout }}\\n\" | pass insert web/backblaze/{{ hostname }}.id"
+      shell: "echo \"{{ application_id.stdout }}\\n{{ application_id.stdout }}\\n\" | pass insert web/backblaze/master.id"
+      environment:
+        PASSWORD_STORE_DIR: "/home/{{ username }}/.config/pass"
+        GNUPGHOME: "/home/{{ username }}/.config/gnupg"
+
+- block:
+  - name: Checking password store for application key
+    # shell: "pass web/backblaze/{{ hostname }}.key"
+    shell: "pass web/backblaze/master.key"
+    environment:
+      PASSWORD_STORE_DIR: "/home/{{ username }}/.config/pass"
+      GNUPGHOME: "/home/{{ username }}/.config/gnupg"
+  rescue:
+    - name: Gathering Backblaze application key
+      delegate_to: localhost
+      # command: "pass web/backblaze/{{ hostname }}.key"
+      command: "pass web/backblaze/master.key"
+      register: application_key
+    - name: Adding application key to password store
+      # shell: "echo \"{{ application_key.stdout }}\\n{{ application_key.stdout }}\\n\" | pass insert web/backblaze/{{ hostname }}.key"
+      shell: "echo \"{{ application_key.stdout }}\\n{{ application_key.stdout }}\\n\" | pass insert web/backblaze/master.key"
+      environment:
+        PASSWORD_STORE_DIR: "/home/{{ username }}/.config/pass"
+        GNUPGHOME: "/home/{{ username }}/.config/gnupg"
+
+- name: Creating log directory
+  file:
+    path: log
+    state: directory
+
+- name: Adding cronjob for daily backups
+  cron:
+    name: "B2 backup"
+    minute: "0"
+    hour: "3"
+    day: "0,3"
+    job: ". $HOME/.profile; restic backup --exclude /media/data/library --exclude /media/data/lost+found /media/data >> /home/{{ username }}/log/restic.log"
+    user: "{{ username }}"
