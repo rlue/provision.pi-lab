@@ -33,6 +33,12 @@
   git:
     repo: https://github.com/rlue/ryanlue.com.git
     dest: src/ryanlue.com
+- name: Allowing pushes to non-bare repository
+  blockinfile:
+    path: src/ryanlue.com/.git/config
+    block: |
+      [receive]
+      	denyCurrentBranch = ignore
 - name: Creating post-receive hook
   copy:
     dest: src/ryanlue.com/.git/hooks/post-receive
@@ -41,12 +47,14 @@
       #!/bin/bash -l
 
       export PATH="$HOME/.rbenv/shims:$HOME/.rbenv/bin:$PATH"
-      GIT_REPO="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && dirname "$(git rev-parse --git-dir)")"
+      unset GIT_DIR
+      GIT_DIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && dirname "$(git rev-parse --git-dir)")"
       PUBLIC_WWW=$HOME/www/ryanlue.com
-
-      cd $GIT_REPO
+      
+      cd "$GIT_DIR"
+      git reset --hard
       bundle install
-      bundle exec jekyll build --source $GIT_REPO --destination $PUBLIC_WWW
+      bundle exec jekyll build --source "$GIT_DIR" --destination "$PUBLIC_WWW"
 - name: Running post-receive hook
   shell: ./post-receive
   args:
