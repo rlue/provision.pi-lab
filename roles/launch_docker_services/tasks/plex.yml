@@ -22,16 +22,16 @@
           environment:
             PUID: "{{ uid.stdout }}"
             PGID: "{{ gid.stdout }}"
-            VERSION: docker
+            VERSION: public
             # VIRTUAL_HOST: plex.ryanlue.com
             # VIRTUAL_PORT: 32400
             # LETSENCRYPT_HOST: plex.ryanlue.com
             # LETSENCRYPT_EMAIL: hello@ryanlue.com
           volumes:
             - "/home/{{ username }}/.local/etc/plex:/config"
-            - "/home/{{ username }}/media/movies:/data/movies"
-            - "/home/{{ username }}/media/tv:/data/tvshows"
-            - "/home/{{ username }}/media/music:/data/music"
+            - "/media/data/library/movies:/data/movies"
+            - "/media/data/library/tv:/data/tv"
+            - "/media/data/library/music:/data/music"
             # - </path for transcoding>:/transcode
           # ports:
           #   - 32400:32400
@@ -41,6 +41,6 @@
           #   - 5353:5353/udp
           #   - 1900:1900/udp
           restart: unless-stopped
-      networks:
-        nginxproxy_default:
-          external: true
+      # networks:
+      #   nginxproxy_default:
+      #     external: true

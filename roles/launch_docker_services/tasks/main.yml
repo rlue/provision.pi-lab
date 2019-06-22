@@ -8,4 +8,6 @@
 - import_tasks: syncthing.yml
 - import_tasks: pihole.yml
 - import_tasks: plex.yml
+  tags:
+    - plex
 # - import_tasks: glances.yml
