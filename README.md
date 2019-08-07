@@ -15,6 +15,15 @@ Ansible playbook for provisioning a Raspberry Pi as a home server, running:
 
 * Plex Media Server
 * TIG stack (Telegraf, InfluxDB, Grafana)?
+* gnubiff headless email fetcher
+  * install mbsync / insert passwords into `pass`
+  * install gnubiff / extract config from `secrets.tar.gpg`
+  * symlink homedir archive’s maildir to `~/mail`
+  * ```
+    $ systemctl --user daemon-reload  # ?
+    $ systemctl --user gnubiff enable
+    $ systemctl --user gnubiff start
+    ```
 
 Preparation
 -----------
