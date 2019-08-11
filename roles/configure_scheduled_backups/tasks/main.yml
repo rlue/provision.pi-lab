@@ -1,6 +1,4 @@
 ---
-# TODO Use application keys instead of master key
-#      https://github.com/restic/restic/issues/2293
 
 - block:
   - name: Checking presence of restic binary
@@ -46,40 +44,34 @@
 
 - block:
   - name: Checking password store for application ID
-    # shell: "pass web/backblaze/{{ hostname }}.id"
-    shell: "pass web/backblaze/master.id"
+    shell: "pass web/backblaze/{{ hostname }}.id"
     environment:
       PASSWORD_STORE_DIR: "/home/{{ username }}/.config/pass"
       GNUPGHOME: "/home/{{ username }}/.config/gnupg"
   rescue:
     - name: Gathering Backblaze application ID
       delegate_to: localhost
-      # command: "pass web/backblaze/{{ hostname }}.id"
-      command: "pass web/backblaze/master.id"
+      command: "pass web/backblaze/{{ hostname }}.id"
       register: application_id
     - name: Adding application ID to password store
-      # shell: "echo \"{{ application_id.stdout }}\\n{{ application_id.stdout }}\\n\" | pass insert web/backblaze/{{ hostname }}.id"
-      shell: "echo \"{{ application_id.stdout }}\\n{{ application_id.stdout }}\\n\" | pass insert web/backblaze/master.id"
+      shell: "echo \"{{ application_id.stdout }}\\n{{ application_id.stdout }}\\n\" | pass insert web/backblaze/{{ hostname }}.id"
       environment:
         PASSWORD_STORE_DIR: "/home/{{ username }}/.config/pass"
         GNUPGHOME: "/home/{{ username }}/.config/gnupg"
 
 - block:
   - name: Checking password store for application key
-    # shell: "pass web/backblaze/{{ hostname }}.key"
-    shell: "pass web/backblaze/master.key"
+    shell: "pass web/backblaze/{{ hostname }}.key"
     environment:
       PASSWORD_STORE_DIR: "/home/{{ username }}/.config/pass"
       GNUPGHOME: "/home/{{ username }}/.config/gnupg"
   rescue:
     - name: Gathering Backblaze application key
       delegate_to: localhost
-      # command: "pass web/backblaze/{{ hostname }}.key"
-      command: "pass web/backblaze/master.key"
+      command: "pass web/backblaze/{{ hostname }}.key"
       register: application_key
     - name: Adding application key to password store
-      # shell: "echo \"{{ application_key.stdout }}\\n{{ application_key.stdout }}\\n\" | pass insert web/backblaze/{{ hostname }}.key"
-      shell: "echo \"{{ application_key.stdout }}\\n{{ application_key.stdout }}\\n\" | pass insert web/backblaze/master.key"
+      shell: "echo \"{{ application_key.stdout }}\\n{{ application_key.stdout }}\\n\" | pass insert web/backblaze/{{ hostname }}.key"
       environment:
         PASSWORD_STORE_DIR: "/home/{{ username }}/.config/pass"
         GNUPGHOME: "/home/{{ username }}/.config/gnupg"
