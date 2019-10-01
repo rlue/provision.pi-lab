@@ -10,6 +10,7 @@ Ansible playbook for provisioning a Raspberry Pi as a home server, running:
 * Pi-hole (DNS-level adblocking)
 * syncthing (file synchronization)
 * restic (scheduled backups)
+* [a toy barcode generator app](https://github.com/rlue/nelson-scandela)
 
 ### TODO
 

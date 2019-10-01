@@ -6,7 +6,7 @@
     definition:
       version: "2"
       services:
-        ddclient:
+        glances:
           image: nicolargo/glances
           container_name: glances
           pid: host

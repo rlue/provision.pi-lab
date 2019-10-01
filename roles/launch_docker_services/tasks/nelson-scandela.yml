@@ -1,0 +1,23 @@
+---
+
+- name: Launching nelson-scandela
+  docker_service:
+    project_name: nelson-scandela
+    definition:
+      version: "2"
+      services:
+        nelson-scandela:
+          image: rlue/nelson-scandela
+          container_name: nelson-scandela
+          pid: host
+          networks:
+            - nginxproxy_default
+          environment:
+            VIRTUAL_HOST: nelson-scandela.ryanlue.com
+            VIRTUAL_PORT: 4567
+            LETSENCRYPT_HOST: nelson-scandela.ryanlue.com
+            LETSENCRYPT_EMAIL: hello@ryanlue.com
+          restart: unless-stopped
+      networks:
+        nginxproxy_default:
+          external: true
