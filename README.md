@@ -13,6 +13,8 @@ Ansible playbook for provisioning a Raspberry Pi as a home server, running:
 
 ### TODO
 
+* TIG stack (Telegraf, InfluxDB, Grafana)? glances?
+
 * Plex Media Server
 
   **Note:** [linuxserver/docker-plex](https://github.com/linuxserver/docker-plex)
@@ -21,17 +23,25 @@ Ansible playbook for provisioning a Raspberry Pi as a home server, running:
   generate a claim token (?), then remove and recreate the container in bridge
   networking mode.
 
-* TIG stack (Telegraf, InfluxDB, Grafana)?
-
 * gnubiff headless email fetcher
 
-  * install mbsync / insert passwords into `pass`
-  * install gnubiff / extract config from `secrets.tar.gpg`
+  * install mbsync (and insert IMAP passwords into `pass`)
+  * install gnubiff (and extract config from `secrets.tar.gpg`)
   * symlink homedir archive’s maildir to `~/mail`
   * ```
-    $ systemctl --user daemon-reload  # ?
+    $ systemctl --user daemon-reload
     $ systemctl --user gnubiff enable
     $ systemctl --user gnubiff start
+    ```
+
+* automate DCIM import from SD card
+
+  * copy `data/dcim-ingester.service` to `/etc/systemd/system/` (with
+    `root.root` / `755` permissions)
+  * ```
+    $ systemctl daemon-reload
+    $ systemctl dcim-ingester enable
+    $ systemctl dcim-ingester start
     ```
 
 Preparation
