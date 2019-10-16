@@ -15,8 +15,8 @@
     name: ssh
     state: restarted
 
-- name: Restarting nfs
+- name: Restarting samba
   become: yes
   service:
-    name: nfs-kernel-server
+    name: smbd
     state: restarted

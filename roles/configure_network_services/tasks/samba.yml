@@ -1,0 +1,16 @@
+---
+
+- name: Adding media library as public samba share
+  become: yes
+  blockinfile:
+    path: /etc/samba/smb.conf
+    block: |
+      [library]
+        comment = Media Library
+        path = /media/data/library
+        browsable = yes
+        create mask = 0600
+        directory mask = 0700
+        read only = yes
+        guest ok = yes
+  notify: Restarting samba

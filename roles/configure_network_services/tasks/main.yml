@@ -40,5 +40,5 @@
 - import_tasks: sshd.yml
   become: yes
 
-- import_tasks: nfs.yml
+- import_tasks: samba.yml
   become: yes

@@ -3,4 +3,4 @@
 packages:
   - ufw
   - fail2ban
-  - nfs-kernel-server
+  - samba
