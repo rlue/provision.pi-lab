@@ -1,0 +1,7 @@
+---
+
+- name: Restarting dphys-swapfile
+  become: yes
+  service:
+    name: dphys-swapfile
+    state: restarted

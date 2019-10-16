@@ -1,0 +1,9 @@
+---
+
+- name: Increasing swapfile size to 1GiB
+  become: yes
+  lineinfile:
+    path: /etc/dphys-swapfile
+    regexp: "^CONF_SWAPSIZE=\\d+"
+    line: "CONF_SWAPSIZE=1024"
+  notify: Restarting dphys-swapfile
